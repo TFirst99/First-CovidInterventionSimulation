@@ -22,7 +22,7 @@ pip install -r requirements.txt
 
 2. Run the entire pipeline:
 ```
-python run_pipeline.py
+python run_analysis.py
 ```
 
 3. Alternatively, run individual components:
@@ -78,7 +78,6 @@ python run_pipeline.py
 
 #### Heterogeneous Effects Analysis
 - Analyzes the difference in treatment response across education levels
-
 
 #### Vaccine Confidence Analysis
 - Evaluates the secondary impact of the intervention on vaccine confidence
