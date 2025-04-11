@@ -37,10 +37,54 @@ python run_pipeline.py
 - `tables/`: Contains statistical tables
 
 ## Methodological Details
-- **Model Specification**: Logistic regression models assess the causal effect of ad campaigns on vaccination rates
-- **Randomization Check**: Chi-squared tests and ANOVA verify successful randomization
-- **Attrition Analysis**: Examines whether participants who dropped out differ from those who completed the study
-- **Heterogeneous Effects**: Investigates how treatment effects vary by education level
+### Data Generation
+
+- **Demographics**: Baseline participant characteristics include age, gender, region, political leaning, education level, and income level. More complex characteristics (political leaning, education, income) are generated with realistic correlations based on primary demographics.
+
+- **Baseline Attitudes**: Initial vaccine confidence is measured on a 1-7 scale, influenced by education level and political leaning,
+
+### Treatment Assignment
+- Participants are randomly assigned to one of three conditions with equal probability (1/3 each):
+  - Reason-based ad campaign
+  - Emotion-based ad campaign
+  - Control group (no ads)
+
+### Endline Data Collection
+- Follow-up survey conducted with a 90% response rate (simulated attrition)
+- Key outcome measures:
+  - Vaccine uptake (binary: yes/no)
+  - Endline vaccine confidence (1-7 scale)
+- Treatment effects are modeled with realistic heterogeneity:
+  - Reason-based ads have a greater effect on higher education individuals
+  - Emotion-based ads have more consistent effects across education levels
+  - Both treatments increase vaccine uptake compared to control
+
+### Statistical Analysis
+
+#### Randomization Check
+- Randomization checks ensure that treatment groups are balanced on observable characteristics
+- Chi-squared tests for categorical variables (gender, region, education, income, political leaning)
+- ANOVA for continuous variables (age, baseline vaccine confidence)
+
+#### Attrition Analysis
+- Attrition analysis ensures that the sample completing the endline survey remains representative of the baseline random sample
+- Chi-squared tests for differential attrition by categorical variables
+- T-tests for differential attrition by continuous variables
+
+#### Treatment Effect Estimation
+- Primary model: Logistic regression of vaccine uptake on treatment indicators
+- Adjusted model: Adds demographic controls (age, gender, education, region, political leaning, baseline confidence)
+- Reports average treatment effects with confidence intervals
+
+#### Heterogeneous Effects Analysis
+- Interaction models examining how treatment effects vary by education level
+- Stratified analyses by education groups
+- Reveals important differences in treatment response across demographic subgroups
+
+#### Vaccine Confidence Analysis
+- ANCOVA models examining changes in vaccine confidence
+- Within-group paired t-tests comparing baseline to endline confidence
+- Evaluates secondary psychological impacts of the interventions
 
 ## Visualizations
 - **Fig 1**: Baseline Vaccine Confidence by Political Leaning
