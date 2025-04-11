@@ -152,6 +152,7 @@ def generate_baseline_data(n_participants=5000, seed=42):
         'age': age,
         'gender': gender,
         'region': region,
+        'political_leaning': political_leaning,
         'education': education,
         'income': income,
         'baseline_vaccine_confidence': baseline_vaccine_confidence
@@ -174,7 +175,7 @@ def generate_treatment_assignment(baseline_df, seed=42):
 
     return treatment_df
 
-def generate_endline_data(baseline_df, treatment_df, response_rate=0.9, seed=42):
+def generate_endline_data(baseline_df, treatment_df, seed=42, response_rate=0.9):
     np.random.seed(seed)
 
     merged_df = pd.merge(baseline_df, treatment_df, on='participant_id')
