@@ -16,14 +16,14 @@ The simulation creates three primary datasets:
 
 ## How to Run the Pipeline
 1. Make sure you have all dependencies installed:
-   ```
-  pip install -r requirements.txt
-   ```
+```
+pip install -r requirements.txt
+```
 
 2. Run the entire pipeline:
-   ```
-   python run_pipeline.py
-   ```
+```
+python run_pipeline.py
+```
 
 3. Alternatively, run individual components:
    - Data generation: `python generate_data.py`
