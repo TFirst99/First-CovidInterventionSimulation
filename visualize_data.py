@@ -1,6 +1,9 @@
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from scipy.stats import chi2_contingency, f_oneway, ttest_ind
+from statsmodels.stats.proportion import proportion_confint
 import os
 
 def load_merged_data(data_dir='data'):
