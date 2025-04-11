@@ -4,11 +4,9 @@ import os
 from analyze_data import run_analysis, load_data, merge_datasets
 
 def setup_table_folder():
-    """Create a folder for saving tables if it doesn't exist."""
     os.makedirs('tables', exist_ok=True)
 
 def format_p_value(p_value):
-    """Format p-values for display in tables."""
     if p_value < 0.001:
         return "<0.001"
     else:
@@ -48,7 +46,6 @@ def create_demographics_table(descriptive_stats):
 def create_balance_table(merged_df):
     treatment_groups = merged_df['treatment_group'].unique()
 
-    # Initialize DataFrame
     balance_table = pd.DataFrame(columns=['Variable', 'Category'] +
                               [f"{group}_Mean" for group in treatment_groups] +
                               [f"{group}_SD" for group in treatment_groups] +
@@ -59,7 +56,6 @@ def create_balance_table(merged_df):
         means = []
         sds = []
 
-        # Get statistics for each treatment group
         for group in treatment_groups:
             group_data = merged_df[merged_df['treatment_group'] == group][var]
             means.append(group_data.mean())
@@ -82,7 +78,6 @@ def create_balance_table(merged_df):
     for var in ['gender', 'region', 'education', 'income', 'political_leaning']:
         categories = merged_df[var].unique()
 
-        # For each category, calculate percentage in each treatment group
         for category in categories:
             percentages = []
             counts = []
@@ -107,15 +102,11 @@ def create_balance_table(merged_df):
 
             balance_table = pd.concat([balance_table, pd.DataFrame([row_data])], ignore_index=True)
 
-    # Save the table
     balance_table.to_csv('tables/balance_table.csv', index=False)
 
     return balance_table
 
 def create_attrition_table(attrition_analysis, merged_df):
-    """
-    Table 3: Attrition Analysis
-    """
     # Get counts of completers and non-completers
     n_completers = sum(merged_df['completed_endline'] == 1)
     n_non_completers = sum(merged_df['completed_endline'] == 0)
@@ -123,7 +114,6 @@ def create_attrition_table(attrition_analysis, merged_df):
     attrition_table = pd.DataFrame(columns=['Variable', 'Category',
                                          'Completers', 'Non-completers',
                                          'Test', 'Statistic', 'p-value'])
-
     # Continuous variables
     for var in ['age', 'baseline_vaccine_confidence']:
         completers_mean = merged_df[merged_df['completed_endline'] == 1][var].mean()
@@ -131,7 +121,6 @@ def create_attrition_table(attrition_analysis, merged_df):
         non_completers_mean = merged_df[merged_df['completed_endline'] == 0][var].mean()
         non_completers_sd = merged_df[merged_df['completed_endline'] == 0][var].std()
 
-        # Find the test result
         test_row = attrition_analysis[attrition_analysis['Variable'] == var].iloc[0]
 
         new_row = pd.DataFrame([{
@@ -156,7 +145,6 @@ def create_attrition_table(attrition_analysis, merged_df):
             non_completers_count = sum((merged_df['completed_endline'] == 0) & (merged_df[var] == category))
             non_completers_pct = non_completers_count / n_non_completers * 100
 
-            # Find the test result (using the variable-level test for all categories)
             test_row = attrition_analysis[attrition_analysis['Variable'] == var].iloc[0]
 
             new_row = pd.DataFrame([{
@@ -170,54 +158,33 @@ def create_attrition_table(attrition_analysis, merged_df):
             }])
             attrition_table = pd.concat([attrition_table, new_row], ignore_index=True)
 
-    # Save the table
     attrition_table.to_csv('tables/attrition_table.csv', index=False)
 
     return attrition_table
 
 def create_treatment_effects_table(treatment_effects):
-    """
-    Table 4: Treatment Effect Estimates
-    """
-    # Extract models
     base_model = treatment_effects['base_model']
     adjusted_model = treatment_effects['adjusted_model']
 
     # Create table structure
     effects_table = pd.DataFrame(columns=['Model', 'Treatment', 'Coefficient', 'SE', 't-value', 'p-value', '95% CI'])
 
-    # Function to extract model coefficients
+    # extract model coefficients
     def extract_model_coefs(model, model_name):
-        if isinstance(model, str):  # Model failed to converge
+        if isinstance(model, str):
             return []
 
-        # Get the treatment coefficients
-        try:
-            # Try with 'C(treatment_group, Treatment("control"))[T.emotion]'
-            reason_coef = model.params.get('C(treatment_group, Treatment("control"))[T.reason]')
-            reason_se = model.bse.get('C(treatment_group, Treatment("control"))[T.reason]')
-            reason_tval = model.tvalues.get('C(treatment_group, Treatment("control"))[T.reason]')
-            reason_pval = model.pvalues.get('C(treatment_group, Treatment("control"))[T.reason]')
-            reason_ci = model.conf_int().loc['C(treatment_group, Treatment("control"))[T.reason]']
+        reason_coef = model.params.get('C(treatment_group, Treatment("control"))[T.reason]')
+        reason_se = model.bse.get('C(treatment_group, Treatment("control"))[T.reason]')
+        reason_tval = model.tvalues.get('C(treatment_group, Treatment("control"))[T.reason]')
+        reason_pval = model.pvalues.get('C(treatment_group, Treatment("control"))[T.reason]')
+        reason_ci = model.conf_int().loc['C(treatment_group, Treatment("control"))[T.reason]']
 
-            emotion_coef = model.params.get('C(treatment_group, Treatment("control"))[T.emotion]')
-            emotion_se = model.bse.get('C(treatment_group, Treatment("control"))[T.emotion]')
-            emotion_tval = model.tvalues.get('C(treatment_group, Treatment("control"))[T.emotion]')
-            emotion_pval = model.pvalues.get('C(treatment_group, Treatment("control"))[T.emotion]')
-            emotion_ci = model.conf_int().loc['C(treatment_group, Treatment("control"))[T.emotion]']
-        except:
-            # Try with 'C(treatment_group)[reason]'
-            reason_coef = model.params.get('C(treatment_group)[reason]')
-            reason_se = model.bse.get('C(treatment_group)[reason]')
-            reason_tval = model.tvalues.get('C(treatment_group)[reason]')
-            reason_pval = model.pvalues.get('C(treatment_group)[reason]')
-            reason_ci = model.conf_int().loc['C(treatment_group)[reason]']
-
-            emotion_coef = model.params.get('C(treatment_group)[emotion]')
-            emotion_se = model.bse.get('C(treatment_group)[emotion]')
-            emotion_tval = model.tvalues.get('C(treatment_group)[emotion]')
-            emotion_pval = model.pvalues.get('C(treatment_group)[emotion]')
-            emotion_ci = model.conf_int().loc['C(treatment_group)[emotion]']
+        emotion_coef = model.params.get('C(treatment_group, Treatment("control"))[T.emotion]')
+        emotion_se = model.bse.get('C(treatment_group, Treatment("control"))[T.emotion]')
+        emotion_tval = model.tvalues.get('C(treatment_group, Treatment("control"))[T.emotion]')
+        emotion_pval = model.pvalues.get('C(treatment_group, Treatment("control"))[T.emotion]')
+        emotion_ci = model.conf_int().loc['C(treatment_group, Treatment("control"))[T.emotion]']
 
         rows = []
         if reason_coef is not None:
@@ -244,37 +211,32 @@ def create_treatment_effects_table(treatment_effects):
 
         return rows
 
-    # Add base model coefficients
+    # base model coefficients
     for row in extract_model_coefs(base_model, "Unadjusted"):
         effects_table = pd.concat([effects_table, pd.DataFrame([row])], ignore_index=True)
 
-    # Add adjusted model coefficients
+    # adjusted model coefficients
     for row in extract_model_coefs(adjusted_model, "Adjusted"):
         effects_table = pd.concat([effects_table, pd.DataFrame([row])], ignore_index=True)
 
-    # Save the table
     effects_table.to_csv('tables/treatment_effects.csv', index=False)
 
     return effects_table
 
 def create_education_effects_table(heterogeneous_effects):
-    """
-    Table 5: Stratified Treatment Effects by Education
-    """
     education_models = heterogeneous_effects['education_models']
 
-    # Create table structure
     edu_table = pd.DataFrame(columns=['Education Level', 'Treatment', 'Coefficient', 'SE', 'p-value', '95% CI'])
 
     for edu, model in education_models.items():
-        if isinstance(model, str):  # Model failed to converge or insufficient data
+        if isinstance(model, str):
             new_row = pd.DataFrame([{
                 'Education Level': edu,
                 'Treatment': 'Reason',
                 'Coefficient': 'N/A',
                 'SE': 'N/A',
                 'p-value': 'N/A',
-                '95% CI': model  # Use the error message as the CI
+                '95% CI': model
             }])
             edu_table = pd.concat([edu_table, new_row], ignore_index=True)
 
@@ -284,92 +246,55 @@ def create_education_effects_table(heterogeneous_effects):
                 'Coefficient': 'N/A',
                 'SE': 'N/A',
                 'p-value': 'N/A',
-                '95% CI': model  # Use the error message as the CI
+                '95% CI': model
             }])
             edu_table = pd.concat([edu_table, new_row], ignore_index=True)
         else:
-            # Try to get the treatment coefficients
-            try:
-                try:
-                    # Try with 'C(treatment_group)[T.reason]'
-                    reason_coef = model.params.get('C(treatment_group)[T.reason]')
-                    reason_se = model.bse.get('C(treatment_group)[T.reason]')
-                    reason_pval = model.pvalues.get('C(treatment_group)[T.reason]')
-                    reason_ci = model.conf_int().loc['C(treatment_group)[T.reason]']
+            reason_coef = model.params.get('C(treatment_group)[T.reason]')
+            reason_se = model.bse.get('C(treatment_group)[T.reason]')
+            reason_pval = model.pvalues.get('C(treatment_group)[T.reason]')
+            reason_ci = model.conf_int().loc['C(treatment_group)[T.reason]']
 
-                    emotion_coef = model.params.get('C(treatment_group)[T.emotion]')
-                    emotion_se = model.bse.get('C(treatment_group)[T.emotion]')
-                    emotion_pval = model.pvalues.get('C(treatment_group)[T.emotion]')
-                    emotion_ci = model.conf_int().loc['C(treatment_group)[T.emotion]']
-                except:
-                    # Try with 'C(treatment_group)[reason]'
-                    reason_coef = model.params.get('C(treatment_group)[reason]')
-                    reason_se = model.bse.get('C(treatment_group)[reason]')
-                    reason_pval = model.pvalues.get('C(treatment_group)[reason]')
-                    reason_ci = model.conf_int().loc['C(treatment_group)[reason]']
+            emotion_coef = model.params.get('C(treatment_group)[T.emotion]')
+            emotion_se = model.bse.get('C(treatment_group)[T.emotion]')
+            emotion_pval = model.pvalues.get('C(treatment_group)[T.emotion]')
+            emotion_ci = model.conf_int().loc['C(treatment_group)[T.emotion]']
 
-                    emotion_coef = model.params.get('C(treatment_group)[emotion]')
-                    emotion_se = model.bse.get('C(treatment_group)[emotion]')
-                    emotion_pval = model.pvalues.get('C(treatment_group)[emotion]')
-                    emotion_ci = model.conf_int().loc['C(treatment_group)[emotion]']
-
-                if reason_coef is not None:
-                    new_row = pd.DataFrame([{
-                        'Education Level': edu,
-                        'Treatment': 'Reason',
-                        'Coefficient': f"{reason_coef:.3f}",
-                        'SE': f"{reason_se:.3f}",
-                        'p-value': format_p_value(reason_pval),
-                        '95% CI': f"({reason_ci[0]:.3f}, {reason_ci[1]:.3f})"
-                    }])
-                    edu_table = pd.concat([edu_table, new_row], ignore_index=True)
-
-                if emotion_coef is not None:
-                    new_row = pd.DataFrame([{
-                        'Education Level': edu,
-                        'Treatment': 'Emotion',
-                        'Coefficient': f"{emotion_coef:.3f}",
-                        'SE': f"{emotion_se:.3f}",
-                        'p-value': format_p_value(emotion_pval),
-                        '95% CI': f"({emotion_ci[0]:.3f}, {emotion_ci[1]:.3f})"
-                    }])
-                    edu_table = pd.concat([edu_table, new_row], ignore_index=True)
-            except:
+            if reason_coef is not None:
                 new_row = pd.DataFrame([{
                     'Education Level': edu,
-                    'Treatment': 'Both',
-                    'Coefficient': 'N/A',
-                    'SE': 'N/A',
-                    'p-value': 'N/A',
-                    '95% CI': 'Error extracting coefficients'
+                    'Treatment': 'Reason',
+                    'Coefficient': f"{reason_coef:.3f}",
+                    'SE': f"{reason_se:.3f}",
+                    'p-value': format_p_value(reason_pval),
+                    '95% CI': f"({reason_ci[0]:.3f}, {reason_ci[1]:.3f})"
                 }])
                 edu_table = pd.concat([edu_table, new_row], ignore_index=True)
 
-    # Save the table
+            if emotion_coef is not None:
+                new_row = pd.DataFrame([{
+                    'Education Level': edu,
+                    'Treatment': 'Emotion',
+                    'Coefficient': f"{emotion_coef:.3f}",
+                    'SE': f"{emotion_se:.3f}",
+                    'p-value': format_p_value(emotion_pval),
+                    '95% CI': f"({emotion_ci[0]:.3f}, {emotion_ci[1]:.3f})"
+                }])
+                edu_table = pd.concat([edu_table, new_row], ignore_index=True)
+
     edu_table.to_csv('tables/education_effects.csv', index=False)
 
     return edu_table
 
 def create_all_tables(results, merged_df):
-    """Create all tables from analysis results."""
     setup_table_folder()
-
-    print("Creating demographics table...")
     create_demographics_table(results['descriptive_stats'])
-
-    print("Creating balance table...")
     create_balance_table(merged_df)
-
-    print("Creating attrition table...")
     create_attrition_table(results['attrition_analysis'], merged_df)
-
-    print("Creating treatment effects table...")
     create_treatment_effects_table(results['treatment_effects'])
-
-    print("Creating education effects table...")
     create_education_effects_table(results['heterogeneous_effects'])
 
-    print("All tables created successfully!")
+    print("tables created")
 
 if __name__ == "__main__":
     print("Running analysis...")
