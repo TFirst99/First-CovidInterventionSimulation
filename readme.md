@@ -77,14 +77,13 @@ python run_pipeline.py
 - Reports average treatment effects with confidence intervals
 
 #### Heterogeneous Effects Analysis
-- Interaction models examining how treatment effects vary by education level
-- Stratified analyses by education groups
-- Reveals important differences in treatment response across demographic subgroups
+- Analyzes the difference in treatment response across education levels
+
 
 #### Vaccine Confidence Analysis
+- Evaluates the secondary impact of the intervention on vaccine confidence
 - ANCOVA models examining changes in vaccine confidence
 - Within-group paired t-tests comparing baseline to endline confidence
-- Evaluates secondary psychological impacts of the interventions
 
 ## Visualizations
 - **Fig 1**: Baseline Vaccine Confidence by Political Leaning
