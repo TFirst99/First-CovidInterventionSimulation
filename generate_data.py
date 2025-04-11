@@ -111,23 +111,23 @@ def generate_vaccine_confidence(education, political_leaning):
     base_value = np.random.normal(4, 1)
 
     education_modifier = {
-        "High School": -0.5,
+        "High School": -0.1,
         "Some College": 0,
-        "Bachelor": 0.5,
-        "Graduate": 0.5
+        "Bachelor": 0.1,
+        "Graduate": 0.1
     }
 
     political_modifier = {
-        "Very Liberal": 0.7,
-        "Liberal": 0.5,
+        "Very Liberal": 1.1,
+        "Liberal": 0.9,
         "Moderate": 0,
-        "Conservative": -0.5,
-        "Very Conservative": -0.7
+        "Conservative": -0.2,
+        "Very Conservative": -1.8
     }
 
     value = base_value + education_modifier[education] + political_modifier[political_leaning]
 
-    return max(1, min(7, round(value, 1)))
+    return max(1, min(7, int(round(value))))
 
 def generate_baseline_data(n_participants=5000, seed=42):
     np.random.seed(seed)
@@ -235,6 +235,7 @@ def generate_endline_data(baseline_df, treatment_df, seed=42, response_rate=0.9)
     # ***** Endline Confidence *****
 
     endline_confidence = endline_with_data['baseline_vaccine_confidence'].values.copy()
+    endline_confidence = endline_confidence.astype(np.float64)
     got_treatment = (is_reason | is_emotion)
     control_group = ~got_treatment
 
@@ -243,17 +244,11 @@ def generate_endline_data(baseline_df, treatment_df, seed=42, response_rate=0.9)
     endline_confidence[vaccine_uptake == 1] += vaccine_boost[vaccine_uptake == 1]
 
     # Case 2: Decrease if they saw an ad, but didn't get vaccinated
-    ad_no_vax_penalty = np.random.uniform(0.5, 1.5, len(endline_with_data))
-    ad_no_vax = (got_treatment) & (vaccine_uptake == 0)
-    endline_confidence[ad_no_vax] -= ad_no_vax_penalty[ad_no_vax]
-
-    # Case 3: Control group who didn't get vaccinated stays roughly the same
-    control_no_vax = (control_group) & (vaccine_uptake == 0)
-    control_change = np.random.uniform(-0.3, 0.3, len(endline_with_data))
-    endline_confidence[control_no_vax] += control_change[control_no_vax]
+    small_penalty = np.random.uniform(0.2, 0.5, len(endline_with_data))
+    endline_confidence[vaccine_uptake == 0] -= small_penalty[vaccine_uptake == 0]
 
     endline_confidence += np.random.normal(0, 0.2, len(endline_with_data))
-    endline_confidence = np.clip(endline_confidence, 1, 7).round(1)
+    endline_confidence = np.clip(endline_confidence, 1, 7).round().astype(int)
 
     endline_with_data['endline_vaccine_confidence'] = endline_confidence
     endline_df = endline_with_data[['participant_id', 'vaccine_uptake', 'endline_vaccine_confidence']]
