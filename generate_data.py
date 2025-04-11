@@ -194,13 +194,12 @@ def generate_endline_data(baseline_df, treatment_df, seed=42, response_rate=0.9)
         on='participant_id'
     )
 
-    # ---- MODEL VACCINATION UPTAKE ----
-    # Baseline uptake converted to [0,1]
+    # ***** Vaccine Uptake ******
+    # Baseline uptake converted to a 0-1 scale
     base_prob = (endline_with_data['baseline_vaccine_confidence'] - 1) / 6
 
     # Age effect
     age_factor = (endline_with_data['age'] - 18) / (80 - 18) * 0.2
-
     baseline_uptake = base_prob + age_factor
     baseline_uptake = np.clip(baseline_uptake, 0.1, 0.9)
 
