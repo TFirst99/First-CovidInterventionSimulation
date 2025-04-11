@@ -15,17 +15,27 @@ The simulation creates three primary datasets:
 3. `endline_survey.csv`: Outcomes after exposure (completed by 90% of participants)
 
 ## How to Run the Pipeline
-1. Make sure you have all dependencies installed:
+1. Create and activate a virtual environment (recommended):
+```
+python -m venv venv
+source venv/bin/activate
+```
+On Windows, use:
+```
+venv\Scripts\activate
+```
+
+2. Make sure you have all dependencies installed:
 ```
 pip install -r requirements.txt
 ```
 
-2. Run the entire pipeline:
+3. Run the entire pipeline:
 ```
 python run_analysis.py
 ```
 
-3. Alternatively, run individual components:
+4. Alternatively, run individual components:
    - Data generation: `python generate_data.py`
    - Data analysis: `python analyze_data.py`
    - Create figures: `python create_figures.py`
