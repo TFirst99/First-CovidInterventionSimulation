@@ -2,6 +2,9 @@ import pandas as pd
 import numpy as np
 from scipy import stats
 import os
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from scipy.stats import chi2_contingency, f_oneway, ttest_ind
 
 def load_data(data_dir='data'):
     baseline_df = pd.read_csv(f'{data_dir}/baseline_survey.csv')
