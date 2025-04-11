@@ -145,7 +145,7 @@ def generate_baseline_data(n_participants=5000, seed=42):
     political_leaning = [generate_political_leaning(g, a, r) for g, a, r in zip(gender, age, region)]
     education = [generate_education(g, a, p) for g, a, p in zip(gender, age, political_leaning)]
     income = [generate_income(e, a) for e, a in zip(education, age)]
-    vaccine_intention = [generate_vaccine_confidence(e, p) for e, p in zip(education, political_leaning)]
+    baseline_vaccine_confidence = [generate_vaccine_confidence(e, p) for e, p in zip(education, political_leaning)]
 
     baseline_df = pd.DataFrame({
         'participant_id': participant_ids,
@@ -154,7 +154,7 @@ def generate_baseline_data(n_participants=5000, seed=42):
         'region': region,
         'education': education,
         'income': income,
-        'baseline_vaccine_intention': vaccine_intention
+        'baseline_vaccine_confidence': baseline_vaccine_confidence
     })
 
     return baseline_df
@@ -180,39 +180,83 @@ def generate_endline_data(baseline_df, treatment_df, response_rate=0.9, seed=42)
     merged_df = pd.merge(baseline_df, treatment_df, on='participant_id')
     n_participants = len(merged_df)
 
-    # randomly select participants to complete the endline survey
+    # Only 4500 participants complete the endline survey
     n_endline = int(n_participants * response_rate)
     endline_participants = np.random.choice(merged_df['participant_id'], n_endline, replace=False)
 
     endline_df = pd.DataFrame({'participant_id': endline_participants})
 
-    endline_with_treatment = pd.merge(endline_df, treatment_df, on='participant_id')
+    endline_with_data = pd.merge(
+        endline_df,
+        merged_df[['participant_id', 'baseline_vaccine_confidence', 'treatment_group',
+                  'education', 'age']],
+        on='participant_id'
+    )
 
-    # define the uptake of the vaccine based on treatment
-    base_prob = 0.5
-    reason_effect = 0.1
-    emotion_effect = 0.15
+    # ---- MODEL VACCINATION UPTAKE ----
+    # Baseline uptake converted to [0,1]
+    base_prob = (endline_with_data['baseline_vaccine_confidence'] - 1) / 6
 
-    # apply the effect of treatment
-    probs = np.where(endline_with_treatment['treatment_group'] == 'control', base_prob,
-                    np.where(endline_with_treatment['treatment_group'] == 'reason',
-                             base_prob + reason_effect, base_prob + emotion_effect))
+    # Age effect
+    age_factor = (endline_with_data['age'] - 18) / (80 - 18) * 0.2
 
-    vaccine_uptake = np.random.binomial(1, probs)
+    baseline_uptake = base_prob + age_factor
+    baseline_uptake = np.clip(baseline_uptake, 0.1, 0.9)
 
-    endline_df['vaccine_uptake'] = vaccine_uptake
+    # Treatment effects
+    treatment_effect = np.zeros(len(endline_with_data))
+    reason_effect = 0.10
+    emotion_effect = 0.12
 
-    # follow-up vaccine intention
-    follow_up_intention = np.random.normal(4, 1.5, n_endline)
-    follow_up_intention = np.clip(follow_up_intention, 1, 7).round(1)
+    # Education moderates treatment effect
+    edu_modifier = np.ones(len(endline_with_data))
+    edu_modifier[endline_with_data['education'] == 'High School'] = 0.7
+    edu_modifier[endline_with_data['education'] == 'Some College'] = 0.9
+    edu_modifier[endline_with_data['education'] == 'Bachelor'] = 1.2
+    edu_modifier[endline_with_data['education'] == 'Graduate'] = 1.5
 
-    # make it higher for those who got vaccinated
-    follow_up_intention = np.where(vaccine_uptake == 1,
-                                  follow_up_intention + 1.5,
-                                  follow_up_intention)
-    follow_up_intention = np.clip(follow_up_intention, 1, 7).round(1)
+    is_reason = endline_with_data['treatment_group'] == 'reason'
+    is_emotion = endline_with_data['treatment_group'] == 'emotion'
 
-    endline_df['follow_up_intention'] = follow_up_intention
+    # Reason is more affected by education level
+    treatment_effect[is_reason] = reason_effect * edu_modifier[is_reason]
+
+    # Emotion is less affected by education level
+    emotion_edu_modifier = (edu_modifier + 2) / 3
+    treatment_effect[is_emotion] = emotion_effect * emotion_edu_modifier[is_emotion]
+
+    uptake_prob = baseline_uptake + treatment_effect
+    uptake_prob += np.random.normal(0, 0.05, len(endline_with_data))
+    uptake_prob = np.clip(uptake_prob, 0.01, 0.99)
+
+    vaccine_uptake = np.random.binomial(1, uptake_prob)
+    endline_with_data['vaccine_uptake'] = vaccine_uptake
+
+    # ***** Endline Confidence *****
+
+    endline_confidence = endline_with_data['baseline_vaccine_confidence'].values.copy()
+    got_treatment = (is_reason | is_emotion)
+    control_group = ~got_treatment
+
+    # Case 1: Increase confidence if they got vaccinated
+    vaccine_boost = np.random.uniform(1.0, 2.0, len(endline_with_data))
+    endline_confidence[vaccine_uptake == 1] += vaccine_boost[vaccine_uptake == 1]
+
+    # Case 2: Decrease if they saw an ad, but didn't get vaccinated
+    ad_no_vax_penalty = np.random.uniform(0.5, 1.5, len(endline_with_data))
+    ad_no_vax = (got_treatment) & (vaccine_uptake == 0)
+    endline_confidence[ad_no_vax] -= ad_no_vax_penalty[ad_no_vax]
+
+    # Case 3: Control group who didn't get vaccinated stays roughly the same
+    control_no_vax = (control_group) & (vaccine_uptake == 0)
+    control_change = np.random.uniform(-0.3, 0.3, len(endline_with_data))
+    endline_confidence[control_no_vax] += control_change[control_no_vax]
+
+    endline_confidence += np.random.normal(0, 0.2, len(endline_with_data))
+    endline_confidence = np.clip(endline_confidence, 1, 7).round(1)
+
+    endline_with_data['endline_vaccine_confidence'] = endline_confidence
+    endline_df = endline_with_data[['participant_id', 'vaccine_uptake', 'endline_vaccine_confidence']]
 
     return endline_df
 
