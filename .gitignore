@@ -1,3 +1,5 @@
 .venv
 .zed
 __pycache__
+data
+results
