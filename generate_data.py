@@ -255,12 +255,20 @@ def generate_endline_data(baseline_df, treatment_df, seed=42, response_rate=0.9)
 
     return endline_df
 
-def save_datasets(baseline_df, treatment_df, endline_df, data_dir='data'):
+def merge_datasets(baseline_df, treatment_df, endline_df):
+    merged_df = pd.merge(baseline_df, treatment_df, on='participant_id')
+    merged_df['completed_endline'] = merged_df['participant_id'].isin(endline_df['participant_id']).astype(int)
+    merged_df = pd.merge(merged_df, endline_df, on='participant_id', how='left')
+
+    return merged_df
+
+def save_datasets(baseline_df, treatment_df, endline_df, merged_df, data_dir='data'):
     os.makedirs(data_dir, exist_ok=True)
 
     baseline_df.to_csv(f'{data_dir}/baseline_survey.csv', index=False)
     treatment_df.to_csv(f'{data_dir}/treatment_assignment.csv', index=False)
     endline_df.to_csv(f'{data_dir}/endline_survey.csv', index=False)
+    merged_df.to_csv(f'{data_dir}/merged_data.csv', index=False)
 
     print(f"Datasets saved to {data_dir}/")
 

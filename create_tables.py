@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
-from analyze_data import run_analysis, load_data, merge_datasets
+from analyze_data import run_analysis, load_data
 
 def setup_table_folder():
     os.makedirs('tables', exist_ok=True)
@@ -299,10 +299,7 @@ def create_all_tables(results, merged_df):
 if __name__ == "__main__":
     print("Running analysis...")
     results = run_analysis()
-
-    # Get merged dataframe for some table calculations
-    baseline_df, treatment_df, endline_df = load_data()
-    merged_df = merge_datasets(baseline_df, treatment_df, endline_df)
+    baseline_df, treatment_df, endline_df, merged_df = load_data()
 
     print("Creating tables...")
     create_all_tables(results, merged_df)

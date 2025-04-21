@@ -13,6 +13,7 @@ The simulation creates three primary datasets:
 1. `baseline_survey.csv`: Demographics and initial attitudes
 2. `treatment_assignment.csv`: Random assignment to treatment groups
 3. `endline_survey.csv`: Outcomes after exposure (completed by 90% of participants)
+4. `merged_data.csv`: merged dataset of results
 
 ## How to Run the Pipeline
 1. Create and activate a virtual environment (recommended):

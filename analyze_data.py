@@ -10,17 +10,10 @@ def load_data(data_dir='data'):
     baseline_df = pd.read_csv(f'{data_dir}/baseline_survey.csv')
     treatment_df = pd.read_csv(f'{data_dir}/treatment_assignment.csv')
     endline_df = pd.read_csv(f'{data_dir}/endline_survey.csv')
-    return baseline_df, treatment_df, endline_df
+    merged_df = pd.read_csv(f'{data_dir}/merged_data.csv')
 
-def merge_datasets(baseline_df, treatment_df, endline_df):
-    merged_df = pd.merge(baseline_df, treatment_df, on='participant_id')
-    merged_df['completed_endline'] = merged_df['participant_id'].isin(endline_df['participant_id']).astype(int)
-    merged_df = pd.merge(merged_df, endline_df, on='participant_id', how='left')
+    return baseline_df, treatment_df, endline_df, merged_df
 
-    # set missing vaccine uptake to zero to stop NaN warnings
-    merged_df['vaccine_uptake'] = merged_df['vaccine_uptake'].fillna(0)
-
-    return merged_df
 
 def generate_descriptive_stats(merged_df):
     demo_stats = {
@@ -298,8 +291,7 @@ def generate_key_findings_stats(merged_df, treatment_effects, heterogeneous_effe
     return pd.DataFrame(key_findings)
 
 def run_analysis(data_dir='data'):
-    baseline_df, treatment_df, endline_df = load_data(data_dir)
-    merged_df = merge_datasets(baseline_df, treatment_df, endline_df)
+    baseline_df, treatment_df, endline_df, merged_df = load_data(data_dir)
 
     # Generate all statistics and models
     descriptive_stats = generate_descriptive_stats(merged_df)

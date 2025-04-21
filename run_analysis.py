@@ -1,7 +1,7 @@
 import os
 import argparse
-from generate_data import generate_baseline_data, generate_treatment_assignment, generate_endline_data, save_datasets
-from analyze_data import load_data, merge_datasets, run_analysis
+from generate_data import generate_baseline_data, generate_treatment_assignment, generate_endline_data, merge_datasets, save_datasets
+from analyze_data import load_data, run_analysis
 
 def setup_directories():
     print("Creating directories")
@@ -14,7 +14,8 @@ def run_pipeline(seed=42):
     baseline_df = generate_baseline_data(seed=seed)
     treatment_df = generate_treatment_assignment(baseline_df, seed=seed)
     endline_df = generate_endline_data(baseline_df, treatment_df, seed=seed, response_rate=0.9)
-    save_datasets(baseline_df, treatment_df, endline_df)
+    merged_df = merge_datasets(baseline_df, treatment_df, endline_df)
+    save_datasets(baseline_df, treatment_df, endline_df, merged_df)
 
     print("Analyzing data")
     results = run_analysis()
@@ -25,8 +26,7 @@ def run_pipeline(seed=42):
 
     print("Creating tables")
     from create_tables import create_all_tables
-    baseline_df, treatment_df, endline_df = load_data()
-    merged_df = merge_datasets(baseline_df, treatment_df, endline_df)
+    baseline_df, treatment_df, endline_df, merged_df = load_data()
     create_all_tables(results, merged_df)
 
     print("Pipeline completed successfully!")
