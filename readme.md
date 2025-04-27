@@ -18,7 +18,7 @@ The simulation creates three primary datasets:
 ## How to Run the Pipeline
 1. Create and activate a virtual environment (recommended):
 ```
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate
 ```
 On Windows, use:
